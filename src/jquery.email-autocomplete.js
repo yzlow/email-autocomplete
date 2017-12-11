@@ -70,8 +70,10 @@
       this.$field.on("focus.eac", $.proxy(this.displaySuggestion, this));
       this.$field.on("blur.eac", $.proxy(this.hideSuggestion, this));
 
-      this.$field.on("keyup.eac", $.proxy(function(e){
-        if(e.which === 39 || e.which === 9){ //right arrow or tab
+      this.$field.on("keydown.eac", $.proxy(function(e){
+        if(e.which === 9){ //tab
+          this.autocomplete();
+        } else if(e.which === 39 && this.$field.prop('selectionStart') === this.$field.val().length) { //right arrow
           this.autocomplete();
         } else if(e.which === 38 && this._index > 0) { //up arrow
           this._index--;
