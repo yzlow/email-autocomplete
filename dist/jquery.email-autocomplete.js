@@ -17,9 +17,11 @@
 
   function EmailAutocomplete(elem, options) {
     this.$field = $(elem);
-    this.options = $.extend(true, {}, defaults, options); //we want deep extend
+    this.options = $.extend(false, {}, defaults, options); //we don't want deep extend, so we can replace the list of domains
     this._defaults = defaults;
     this._domains = this.options.domains;
+    this._index = 0;
+    this._matches = this._domains;
     this.init();
   }
 
@@ -72,11 +74,18 @@
       //bind events and handlers
       this.$field.on("keyup.eac", $.proxy(this.displaySuggestion, this));
 
-      this.$field.on("blur.eac", $.proxy(this.autocomplete, this));
+      this.$field.on("focus.eac", $.proxy(this.displaySuggestion, this));
+      this.$field.on("blur.eac", $.proxy(this.hideSuggestion, this));
 
-      this.$field.on("keydown.eac", $.proxy(function(e){
-        if(e.which === 39 || e.which === 9){
+      this.$field.on("keyup.eac", $.proxy(function(e){
+        if(e.which === 39 || e.which === 9){ //right arrow or tab
           this.autocomplete();
+        } else if(e.which === 38 && this._index > 0) { //up arrow
+          this._index--;
+          this.displaySuggestion(e);
+        } else if(e.which === 40 && this._index < this._matches.length - 1) { //down arrow
+          this._index++;
+          this.displaySuggestion(e);
         }
       }, this));
 
@@ -84,21 +93,31 @@
     },
 
     suggest: function (str) {
+      this._matches = this._domains;
+      if (!str.length) {
+        return "";
+      }
       var str_arr = str.split("@");
       if (str_arr.length > 1) {
         str = str_arr.pop();
         if (!str.length) {
-          return "";
+          return this._domains[this._index];
         }
       } else {
-        return "";
+        return "@" + this._domains[this._index];
       }
 
-      var match = this._domains.filter(function (domain) {
+      this._matches = this._domains.filter(function (domain) {
         return domain.indexOf(str) === 0;
-      }).shift() || "";
-
-      return match.replace(str, "");
+      });
+      if (this._matches.length === 0) {
+        this._index = 0;
+        return "";
+      } else {
+        this._index = Math.min(this._index, this._matches.length - 1);
+        var match = this._matches[this._index];
+        return match.replace(str, "");
+      }
     },
 
     autocomplete: function () {
@@ -139,6 +158,13 @@
         //offset our suggestion container
         this.$suggOverlay.css('left', this.fieldLeftOffset + cvalWidth + "px");
       }
+    },
+
+    /**
+     * Hides the suggestion, handler for blur event
+     */
+    hideSuggestion: function () {
+      this.$suggOverlay.text("");
     },
 
     /**
