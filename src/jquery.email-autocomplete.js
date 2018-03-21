@@ -5,6 +5,7 @@
   var pluginName = "emailautocomplete";
   var defaults = {
     suggClass: "eac-sugg",
+    separator: "@",
     domains: ["yahoo.com" ,"hotmail.com" ,"gmail.com" ,"me.com" ,"aol.com" ,"mac.com" ,"live.com" ,"comcast.net" ,"googlemail.com" ,"msn.com" ,"hotmail.co.uk" ,"yahoo.co.uk" ,"facebook.com" ,"verizon.net" ,"sbcglobal.net" ,"att.net" ,"gmx.com" ,"outlook.com" ,"icloud.com"]
   };
 
@@ -12,6 +13,7 @@
     this.$field = $(elem);
     this.options = $.extend(false, {}, defaults, options); //we don't want deep extend, so we can replace the list of domains
     this._defaults = defaults;
+    this._separator = this.options.separator;
     this._domains = this.options.domains;
     this._index = 0;
     this._matches = this._domains;
@@ -92,14 +94,14 @@
       if (!str.length) {
         return "";
       }
-      var str_arr = str.split("@");
+      var str_arr = str.split(this._separator);
       if (str_arr.length > 1) {
         str = str_arr.pop();
         if (!str.length) {
           return this._domains[this._index];
         }
       } else {
-        return "@" + this._domains[this._index];
+        return this._separator + this._domains[this._index];
       }
 
       this._matches = this._domains.filter(function (domain) {
