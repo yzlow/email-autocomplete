@@ -5,6 +5,7 @@
   var pluginName = "emailautocomplete";
   var defaults = {
     suggClass: "eac-sugg",
+    onResultChanged: null,
     domains: ["yahoo.com" ,"hotmail.com" ,"gmail.com" ,"me.com" ,"aol.com" ,"mac.com" ,"live.com" ,"comcast.net" ,"googlemail.com" ,"msn.com" ,"hotmail.co.uk" ,"yahoo.co.uk" ,"facebook.com" ,"verizon.net" ,"sbcglobal.net" ,"att.net" ,"gmx.com" ,"outlook.com" ,"icloud.com"]
   };
 
@@ -77,28 +78,36 @@
     },
 
     suggest: function (str) {
+      var result = {
+        "match": "",
+        "rest": ""
+      };
+
       var str_arr = str.split("@");
       if (str_arr.length > 1) {
         str = str_arr.pop();
         if (!str.length) {
-          return "";
+          return result;
         }
       } else {
-        return "";
+        return result;
       }
 
       var match = this._domains.filter(function (domain) {
         return domain.indexOf(str) === 0;
       }).shift() || "";
 
-      return match.replace(str, "");
+      result.match = match;
+      result.rest = match.replace(str, "");
+
+      return result;
     },
 
     autocomplete: function () {
-      if(typeof this.suggestion === "undefined" || this.suggestion.length < 1){
+      if(typeof this.suggestion === "undefined" || !this.suggestion.hasOwnProperty("rest") || this.suggestion.rest.length < 1){
         return false;
       }
-      this.$field.val(this.val + this.suggestion);
+      this.$field.val(this.val + this.suggestion.rest);
       this.$suggOverlay.text("");
       this.$cval.text("");
     },
@@ -110,14 +119,16 @@
       this.val = this.$field.val();
       this.suggestion = this.suggest(this.val);
 
-      if (!this.suggestion.length) {
+      this.options.onResultChanged && this.options.onResultChanged.call(undefined, this.val, this.suggestion.match, this.suggestion.rest);
+
+      if (!this.suggestion.rest.length) {
         this.$suggOverlay.text("");
       } else {
         e.preventDefault();
       }
 
       //update with new suggestion
-      this.$suggOverlay.text(this.suggestion);
+      this.$suggOverlay.text(this.suggestion.rest);
       this.$cval.text(this.val);
 
       // get input padding, border and margin to offset text
